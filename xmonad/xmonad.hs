@@ -1,11 +1,4 @@
---
--- xmonad example config file.
---
--- A template showing all available configuration hooks,
--- and how to override the defaults in your own xmonad.hs conf file.
---
--- Normally, you'd only override those defaults you care about.
---
+-- XMonad Config File - Tathagata Paul (@4molybdenum2)
 
 -- IMPORTS
 import XMonad
@@ -22,6 +15,8 @@ import XMonad.Layout.Spacing
 import XMonad.Hooks.StatusBar
 import XMonad.Hooks.StatusBar.PP
 
+-- Utils Imports
+import XMonad.Util.Cursor
 
 import qualified XMonad.StackSet as W
 import qualified Data.Map        as M
@@ -77,10 +72,10 @@ myKeys conf@(XConfig {XMonad.modMask = modm}) = M.fromList $
     -- launch rofi (drun mode)
     , ((modm,               xK_p     ), spawn "rofi -show drun")
    
-    , ((modm,               xK_v     ), spawn "rofi -show power-menu -modi power-menu:rofi-power-menu")
+    , ((modm .|. shiftMask, xK_p     ), spawn "rofi -show power-menu -modi power-menu:rofi-power-menu")
 
     -- launch rofi (window mode)
-    , ((modm .|. shiftMask, xK_p     ), spawn "rofi -show window")
+    , ((modm .|. shiftMask, xK_w     ), spawn "rofi -show window")
 
     -- close focused window
     , ((modm .|. shiftMask, xK_c     ), kill)
@@ -98,10 +93,10 @@ myKeys conf@(XConfig {XMonad.modMask = modm}) = M.fromList $
     , ((modm,               xK_Tab   ), windows W.focusDown)
 
     -- Move focus to the next window
-    , ((modm,               xK_j     ), windows W.focusDown)
+    , ((modm,               xK_Right     ), windows W.focusDown)
 
     -- Move focus to the previous window
-    , ((modm,               xK_k     ), windows W.focusUp  )
+    , ((modm,               xK_Left     ), windows W.focusUp  )
 
     -- Move focus to the master window
     , ((modm,               xK_m     ), windows W.focusMaster  )
@@ -130,6 +125,7 @@ myKeys conf@(XConfig {XMonad.modMask = modm}) = M.fromList $
     -- Deincrement the number of windows in the master area
     , ((modm              , xK_period), sendMessage (IncMasterN (-1)))
 
+    , ((mod4Mask .|. shiftMask, xK_z), spawn "xscreensaver-command -lock")
     -- Toggle the status bar gap
     -- Use this binding with avoidStruts from Hooks.ManageDocks.
     -- See also the statusBar function from Hooks.DynamicLog.
@@ -144,9 +140,12 @@ myKeys conf@(XConfig {XMonad.modMask = modm}) = M.fromList $
 
     -- Run xmessage with a summary of the default keybindings (useful for beginners)
     , ((modm .|. shiftMask, xK_slash ), spawn ("echo \"" ++ help ++ "\" | xmessage -file -"))
-    ]
+    -- Decrease Master Volume
+    , ((modm,           xK_Down    ), spawn ("amixer set Master 5%- unmute")) 
+    -- Increase Master Volume
+    , ((modm,           xK_Up    ), spawn ("amixer set Master 5%+ unmute"))
+    ]   
     ++
-
     --
     -- mod-[1..9], Switch to workspace N
     -- mod-shift-[1..9], Move client to workspace N
@@ -274,15 +273,15 @@ mySB = statusBarProp "xmobar" (pure myPP)
 -- By default, do nothing.
 myStartupHook = do
 	spawn "killall trayer"
-
+	
+	spawnOnce "xscreensaver -no-splash &"
 	spawnOnce "picom"
-	spawnOnce "volumeicon"
 	spawnOnce "nm-applet"
 	spawnOnce "dunst"
 	spawnOnce "nitrogen --restore &" --set wallpaper on start
 
 	spawn ("sleep 2 && trayer --edge top --align right --widthtype request --padding 6 --SetDockType true --SetPartialStrut true --expand true --monitor 1 --transparent true --alpha 0 --tint 0x282c34 --height 22")
-
+	setDefaultCursor xC_left_ptr
 
 
 ------------------------------------------------------------------------
@@ -328,9 +327,10 @@ help :: String
 help = unlines ["The default modifier key is 'alt'. Default keybindings:",
     "",
     "-- launching and killing programs",
-    "mod-Shift-Enter  Launch xterminal",
-    "mod-p            Launch rofi",
-    "mod-Shift-p      Launch gmrun",
+    "mod-Shift-Enter  Launch alacritty",
+    "mod-p            Launch rofi in drun mode",
+    "mod-Shift-p      Launch rofi in window mode",
+    "mod-v            Launch rofi power menu",
     "mod-Shift-c      Close/kill the focused window",
     "mod-Space        Rotate through the available layout algorithms",
     "mod-Shift-Space  Reset the layouts on the current workSpace to default",
