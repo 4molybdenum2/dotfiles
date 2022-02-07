@@ -2,8 +2,6 @@
 
 -- IMPORTS
 import XMonad
-import XMonad.Util.SpawnOnce
-import XMonad.Util.Run
 import XMonad.Hooks.ManageDocks
 import Data.Monoid
 import System.Exit
@@ -12,12 +10,17 @@ import System.Exit
 import XMonad.Layout.Spacing
 
 -- Hooks Imports
+import XMonad.Hooks.DynamicLog
 import XMonad.Hooks.StatusBar
 import XMonad.Hooks.StatusBar.PP
 
 -- Utils Imports
+import XMonad.Util.Run
 import XMonad.Util.Cursor
-
+import XMonad.Util.SpawnOnce
+import XMonad.Util.Loggers
+import XMonad.Util.ClickableWorkspaces
+--
 import qualified XMonad.StackSet as W
 import qualified Data.Map        as M
 
@@ -35,8 +38,8 @@ myClickJustFocuses :: Bool
 myClickJustFocuses = False
 
 -- Width of the window border in pixels.
-
-myBorderWidth   = 2
+myBorderWidth :: Dimension
+myBorderWidth = 2
 
 -- modMask lets you specify which modkey you want to use. The default
 -- is mod1Mask ("left alt").  You may also consider using mod3Mask
@@ -54,8 +57,8 @@ myModMask       = mod4Mask
 --
 -- > workspaces = ["web", "irc", "code" ] ++ map show [4..9]
 --
-myWorkspaces    = ["1","2","3","4","5","6","7","8","9"]
-
+myWorkspaces    = ["dev","www","chat","4","5","6","7","8","9"]
+myWorkspaceIndices = M.fromList $ zipWith (,) myWorkspaces [1..]
 -- Border colors for unfocused and focused windows, respectively.
 --
 myNormalBorderColor  = "#dddddd"
@@ -233,6 +236,7 @@ myManageHook = composeAll
     , className =? "notification"   --> doFloat
     , className =? "Gimp"           --> doFloat
     , resource  =? "desktop_window" --> doIgnore
+    , className =? "Chromium"       --> doShift ( myWorkspaces !! 1 )
     , resource  =? "kdesktop"       --> doIgnore ]
 
 ------------------------------------------------------------------------
@@ -254,13 +258,26 @@ myEventHook = mempty
 --
 myLogHook = return ()
 
-
+myPP :: PP
 myPP = def { 
-	  ppCurrent = xmobarColor "white" "" .wrap "[" "]"
-        , ppTitle = xmobarColor "white" "" . shorten 60
-	, ppSep =  "<fc=" ++ "white" ++ "> <fn=1>|</fn> </fc>"
+	  ppCurrent = brightWhite .wrap "[" "]"
+	, ppVisible = lowWhite
+	, ppHidden = grey
+	, ppHiddenNoWindows = lightBlue 
+        , ppTitle = lowWhite . shorten 60
+	, ppSep =  magenta " • "
 	, ppOrder = \(ws:_:t:_)   -> [ws,t]
 	}
+       where
+         brightWhite, lowWhite, grey, darkGrey, red :: String -> String
+         brightWhite = xmobarColor "#F2F2F2" ""
+         lowWhite    = xmobarColor "#D0D0D0" ""
+         grey        = xmobarColor "#A6A6A6" ""
+         darkGrey    = xmobarColor "#595958" ""
+         red         = xmobarColor "#8C2F1B" ""
+	 magenta     = xmobarColor "#FF79C6" ""
+	 darkBlue    = xmobarColor "#2202a6" ""
+	 lightBlue   = xmobarColor "#26ffff" ""
 mySB = statusBarProp "xmobar" (pure myPP)
 
 ------------------------------------------------------------------------
@@ -275,12 +292,13 @@ myStartupHook = do
 	spawn "killall trayer"
 	
 	spawnOnce "xscreensaver -no-splash &"
+	spawnOnce "cbatticon"
 	spawnOnce "picom"
 	spawnOnce "nm-applet"
 	spawnOnce "dunst"
 	spawnOnce "nitrogen --restore &" --set wallpaper on start
 
-	spawn ("sleep 2 && trayer --edge top --align right --widthtype request --padding 6 --SetDockType true --SetPartialStrut true --expand true --monitor 1 --transparent true --alpha 0 --tint 0x282c34 --height 22")
+	spawn ("sleep 2 && trayer --edge top --align right --widthtype request --padding 6 --SetDockType true --SetPartialStrut true --expand true --monitor 1 --transparent true --alpha 0 --tint 0x282c34 --height 22 --iconspacing 10")
 	setDefaultCursor xC_left_ptr
 
 
@@ -289,9 +307,13 @@ myStartupHook = do
 
 -- Run xmonad with the settings you specify. No need to modify this.
 --
-main = do
-  xmproc <- spawnPipe "xmobar -x 0 /home/molybdenum/.config/xmobar/xmobarrc"
-  xmonad $ docks $ withEasySB mySB defToggleStrutsKey $ defaults
+main :: IO()
+main = xmonad
+       . docks
+       . withEasySB(mySB) defToggleStrutsKey
+       $ defaults
+  --xmproc <- spawnPipe "xmobar -x 0 /home/molybdenum/.config/xmobar/xmobarrc"
+  --xmonad $ docks $ withEasySB(mySB) defToggleStrutsKey $ defaults
 
 -- A structure containing your configuration settings, overriding
 -- fields in the default config. Any you don't override, will
