@@ -13,6 +13,7 @@ import XMonad.Layout.Spacing
 import XMonad.Hooks.DynamicLog
 import XMonad.Hooks.StatusBar
 import XMonad.Hooks.StatusBar.PP
+import XMonad.Hooks.EwmhDesktops
 
 -- Utils Imports
 import XMonad.Util.Run
@@ -57,7 +58,7 @@ myModMask       = mod4Mask
 --
 -- > workspaces = ["web", "irc", "code" ] ++ map show [4..9]
 --
-myWorkspaces    = ["dev","www","chat","4","5","6","7","8","9"]
+myWorkspaces    = ["<fn=1>\xf79f</fn> var","<fn=1>\xfab1</fn> www","<fn=1>\xf121</fn> dev", "<fn=1>\xf1d7</fn> chat", "<fn=1>\xfc58</fn> mus", "<fn=1>\xe78c</fn> fs", "<fn=1>\xf308</fn> dock", "<fn=1>\xe732</fn> media", "<fn=1>\xe780</fn> misc"]
 myWorkspaceIndices = M.fromList $ zipWith (,) myWorkspaces [1..]
 -- Border colors for unfocused and focused windows, respectively.
 --
@@ -73,9 +74,9 @@ myKeys conf@(XConfig {XMonad.modMask = modm}) = M.fromList $
     [ ((modm .|. shiftMask, xK_Return), spawn $ XMonad.terminal conf)
 
     -- launch rofi (drun mode)
-    , ((modm,               xK_p     ), spawn "rofi -show drun")
+    , ((modm,               xK_p     ), spawn "/home/molybdenum/.config/rofi/launcher.sh")
    
-    , ((modm .|. shiftMask, xK_p     ), spawn "rofi -show power-menu -modi power-menu:rofi-power-menu")
+    , ((modm .|. shiftMask, xK_p     ), spawn "/home/molybdenum/.config/rofi/power.sh")
 
     -- launch rofi (window mode)
     , ((modm .|. shiftMask, xK_w     ), spawn "rofi -show window")
@@ -234,8 +235,9 @@ myManageHook = composeAll
     , className =? "download"       --> doFloat
     , className =? "error"          --> doFloat
     , className =? "notification"   --> doFloat
-    , className =? "Gimp"           --> doFloat
     , resource  =? "desktop_window" --> doIgnore
+    , className =? "Discord"        --> doShift ( myWorkspaces !! 2 )
+    , className =? "Spotify"        --> doShift ( myWorkspaces !! 3 )
     , className =? "Chromium"       --> doShift ( myWorkspaces !! 1 )
     , resource  =? "kdesktop"       --> doIgnore ]
 
@@ -260,24 +262,27 @@ myLogHook = return ()
 
 myPP :: PP
 myPP = def { 
-	  ppCurrent = brightWhite .wrap "[" "]"
-	, ppVisible = lowWhite
-	, ppHidden = grey
-	, ppHiddenNoWindows = lightBlue 
+	  ppCurrent = mellowRed .wrap "[" "]"
+	, ppVisible = mellowRed
+	, ppHidden = mellowGreen
+	, ppHiddenNoWindows = mellowPurple 
         , ppTitle = lowWhite . shorten 60
 	, ppSep =  magenta " • "
 	, ppOrder = \(ws:_:t:_)   -> [ws,t]
 	}
-       where
-         brightWhite, lowWhite, grey, darkGrey, red :: String -> String
-         brightWhite = xmobarColor "#F2F2F2" ""
-         lowWhite    = xmobarColor "#D0D0D0" ""
-         grey        = xmobarColor "#A6A6A6" ""
-         darkGrey    = xmobarColor "#595958" ""
-         red         = xmobarColor "#8C2F1B" ""
-	 magenta     = xmobarColor "#FF79C6" ""
-	 darkBlue    = xmobarColor "#2202a6" ""
-	 lightBlue   = xmobarColor "#26ffff" ""
+  where
+  brightWhite, lowWhite, grey, darkGrey, red, magenta, darkBlue, lightBlue, mellowRed, mellowGreen, mellowPurple :: String -> String
+  brightWhite = xmobarColor "#F2F2F2" ""
+  lowWhite    = xmobarColor "#D0D0D0" ""
+  grey        = xmobarColor "#A6A6A6" ""
+  darkGrey    = xmobarColor "#595958" ""
+  red         = xmobarColor "#8C2F1B" ""
+  magenta     = xmobarColor "#FF79C6" ""
+  darkBlue    = xmobarColor "#2202a6" ""
+  lightBlue   = xmobarColor "#26ffff" ""
+  mellowRed   = xmobarColor "#ff007f" ""
+  mellowGreen = xmobarColor "#44d4db"  ""
+  mellowPurple = xmobarColor "#6565b8"  ""
 mySB = statusBarProp "xmobar" (pure myPP)
 
 ------------------------------------------------------------------------
@@ -309,6 +314,8 @@ myStartupHook = do
 --
 main :: IO()
 main = xmonad
+       .ewmhFullscreen
+       .ewmh
        . docks
        . withEasySB(mySB) defToggleStrutsKey
        $ defaults
@@ -350,19 +357,16 @@ help = unlines ["The default modifier key is 'alt'. Default keybindings:",
     "",
     "-- launching and killing programs",
     "mod-Shift-Enter  Launch alacritty",
-    "mod-p            Launch rofi in drun mode",
-    "mod-Shift-p      Launch rofi in window mode",
-    "mod-v            Launch rofi power menu",
+    "mod-p            Launch rofi",
+    "mod-Shift-p      Launch rofi power menu",
     "mod-Shift-c      Close/kill the focused window",
     "mod-Space        Rotate through the available layout algorithms",
     "mod-Shift-Space  Reset the layouts on the current workSpace to default",
     "mod-n            Resize/refresh viewed windows to the correct size",
     "",
     "-- move focus up or down the window stack",
-    "mod-Tab        Move focus to the next window",
-    "mod-Shift-Tab  Move focus to the previous window",
-    "mod-j          Move focus to the next window",
-    "mod-k          Move focus to the previous window",
+    "mod-Right_Arrow Move focus to the next window",
+    "mod-Left-Arrow  Move focus to the previous window",
     "mod-m          Move focus to the master window",
     "",
     "-- modifying the window order",
